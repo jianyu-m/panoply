@@ -100,7 +100,7 @@ Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefau
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 \
-	-Wl,--version-script=PanoplyEnclave/TopensslEnclave.lds
+	-Wl,--version-script=myenclave/TopensslEnclave.lds
 
 Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
 
@@ -140,7 +140,7 @@ endif
 ######## App Objects ########
 
 App/TopensslEnclave_u.c: $(SGX_EDGER8R) myenclave/TopensslEnclave.edl
-	@cd App && $(SGX_EDGER8R) --use-prefix --untrusted ../myenclave/TopensslEnclave.edl --search-path ../myenclave --search-path $(SGX_SDK)/include
+	@cd App && $(SGX_EDGER8R) --use-prefix --untrusted ../myenclave/TopensslEnclave.edl --search-path ../myenclave --search-path ../PanoplyEnclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
 App/TopensslEnclave_u.o: App/TopensslEnclave_u.c
@@ -159,7 +159,7 @@ $(App_Name): App/TopensslEnclave_u.o $(App_Cpp_Objects)
 ######## Enclave Objects ########
 
 myenclave/TopensslEnclave_t.c: $(SGX_EDGER8R) myenclave/TopensslEnclave.edl
-	@cd myenclave && $(SGX_EDGER8R) --use-prefix --trusted ../myenclave/TopensslEnclave.edl --search-path ../myenclave --search-path $(SGX_SDK)/include
+	@cd myenclave && $(SGX_EDGER8R) --use-prefix --trusted ../myenclave/TopensslEnclave.edl --search-path ../myenclave --search-path ../PanoplyEnclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
 myenclave/TopensslEnclave_t.o: myenclave/TopensslEnclave_t.c
@@ -170,12 +170,16 @@ myenclave/%.o: myenclave/%.cpp
 	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
+PanoplyEnclave/%.o: PanoplyEnclave/%.cpp
+	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
+	@echo "CXX  <=  $<"
+
 $(Enclave_Name): myenclave/TopensslEnclave_t.o $(Enclave_Cpp_Objects)
 	@$(CXX) $^ -o $@ $(Enclave_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Name): $(Enclave_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key myenclave/myenclave.pem -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key myenclave/enclave.pem -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
 	@echo "SIGN =>  $@"
 
 .PHONY: clean

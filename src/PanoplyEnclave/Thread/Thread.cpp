@@ -23,7 +23,7 @@
 */
 
 // #include "../TopensslEnclave.h"
-#include "TopensslEnclave_t.h"
+// #include "TopensslEnclave_t.h"
 #include "../user_types.h"
 #include <sgx_thread.h>
 #include <sgx_stdio_util.h>
