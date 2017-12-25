@@ -44,7 +44,7 @@ else
 endif
 
 App_Cpp_Files := App/App.cpp $(wildcard App/IO/*.cpp) $(wildcard App/Thread/*.cpp) $(wildcard App/SysEnvironment/*.cpp) $(wildcard App/Net/*.cpp) $(wildcard App/ssl/*.cpp) $(wildcard App/Untrusted_LocalAttestation/*.cpp)
-App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I../include -I../src/TopensslEnclave/include  -I../topenssl/include
+App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I../include -I../src/PanoplyEnclave/include
 
 App_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths) -DH2O_USE_LIBUV=0
 
@@ -85,8 +85,13 @@ else
 	Crypto_Library_Name := sgx_tcrypto
 endif
 
-Enclave_Cpp_Files := $(wildcard TopensslEnclave/EnclaveUtil/*.cpp) $(wildcard TopensslEnclave/IO/*.cpp) $(wildcard TopensslEnclave/Thread/*.cpp) $(wildcard TopensslEnclave/EnclaveCommunication/*.cpp) $(wildcard TopensslEnclave/LocalAttestationCode/*.cpp) $(wildcard TopensslEnclave/h2omain/*.cpp) $(wildcard TopensslEnclave/*.cpp)
-Enclave_Include_Paths := -IInclude -ITopensslEnclave -I../src/TopensslEnclave/lib/cloexec -I../src/TopensslEnclave/lib/picoparser -I../src/TopensslEnclave/deps/yoml -I../src/TopensslEnclave/deps/yaml/include -I../src/TopensslEnclave/deps/neverbleed -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/stlport -I../include  -I../include/zlib -I../src/TopensslEnclave/include -I../topenssl/include -I../src/TopensslEnclave/syscall_include
+Enclave_Cpp_Files := $(wildcard PanoplyEnclave/EnclaveUtil/*.cpp) $(wildcard PanoplyEnclave/IO/*.cpp) $(wildcard PanoplyEnclave/Thread/*.cpp) $(wildcard PanoplyEnclave/EnclaveCommunication/*.cpp) $(wildcard PanoplyEnclave/LocalAttestationCode/*.cpp)
+
+Build_Enclave_Cpp_Files:= $(wildcard myenclave/*.cpp)
+
+Enclave_Cpp_Files += $(Build_Enclave_Cpp_Files)
+
+Enclave_Include_Paths := -IInclude -IPanoplyEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/stlport -I../include  -I../include/zlib -I../src/PanoplyEnclave/include -I../src/PanoplyEnclave/syscall_include
 Enclave_C_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -fstack-protector $(Enclave_Include_Paths) -DH2O_USE_LIBUV=0
 Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++03 -nostdinc++ -fpermissive -w
 Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
@@ -95,13 +100,13 @@ Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefau
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 \
-	-Wl,--version-script=TopensslEnclave/TopensslEnclave.lds
+	-Wl,--version-script=PanoplyEnclave/TopensslEnclave.lds
 
 Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
 
 Enclave_Name := TopensslEnclave.so
 Signed_Enclave_Name := TopensslEnclave.signed.so
-Enclave_Config_File := TopensslEnclave/TopensslEnclave.config.xml
+Enclave_Config_File := myenclave/TopensslEnclave.config.xml
 
 ifeq ($(SGX_MODE), HW)
 ifneq ($(SGX_DEBUG), 1)
@@ -134,8 +139,8 @@ endif
 
 ######## App Objects ########
 
-App/TopensslEnclave_u.c: $(SGX_EDGER8R) TopensslEnclave/TopensslEnclave.edl
-	@cd App && $(SGX_EDGER8R) --use-prefix --untrusted ../TopensslEnclave/TopensslEnclave.edl --search-path ../TopensslEnclave --search-path $(SGX_SDK)/include
+App/TopensslEnclave_u.c: $(SGX_EDGER8R) myenclave/TopensslEnclave.edl
+	@cd App && $(SGX_EDGER8R) --use-prefix --untrusted ../myenclave/TopensslEnclave.edl --search-path ../myenclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
 App/TopensslEnclave_u.o: App/TopensslEnclave_u.c
@@ -153,24 +158,24 @@ $(App_Name): App/TopensslEnclave_u.o $(App_Cpp_Objects)
 
 ######## Enclave Objects ########
 
-TopensslEnclave/TopensslEnclave_t.c: $(SGX_EDGER8R) TopensslEnclave/TopensslEnclave.edl
-	@cd TopensslEnclave && $(SGX_EDGER8R) --use-prefix --trusted ../TopensslEnclave/TopensslEnclave.edl --search-path ../TopensslEnclave --search-path $(SGX_SDK)/include
+myenclave/TopensslEnclave_t.c: $(SGX_EDGER8R) myenclave/TopensslEnclave.edl
+	@cd myenclave && $(SGX_EDGER8R) --use-prefix --trusted ../myenclave/TopensslEnclave.edl --search-path ../myenclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
-TopensslEnclave/TopensslEnclave_t.o: TopensslEnclave/TopensslEnclave_t.c
+myenclave/TopensslEnclave_t.o: myenclave/TopensslEnclave_t.c
 	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-TopensslEnclave/%.o: TopensslEnclave/%.cpp
+myenclave/%.o: myenclave/%.cpp
 	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(Enclave_Name): TopensslEnclave/TopensslEnclave_t.o $(Enclave_Cpp_Objects)
+$(Enclave_Name): myenclave/TopensslEnclave_t.o $(Enclave_Cpp_Objects)
 	@$(CXX) $^ -o $@ $(Enclave_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Name): $(Enclave_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key TopensslEnclave/TopensslEnclave_private.pem -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key myenclave/myenclave.pem -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
 	@echo "SIGN =>  $@"
 
 .PHONY: clean

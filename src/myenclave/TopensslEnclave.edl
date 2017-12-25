@@ -1,0 +1,50 @@
+/* TopensslEnclave.edl - Top EDL file. */
+
+enclave {
+
+    //from "LocalAttestationCode/LocalAttestationCode.edl" import *;
+    from "../PanoplyEnclave/Thread/Pthread.edl" import *;
+    from "../PanoplyEnclave/SysEnvironment/sgx_time.edl" import *;
+    from "sgx_tstdc.edl" import sgx_thread_wait_untrusted_event_ocall, sgx_thread_set_untrusted_event_ocall, sgx_thread_setwait_untrusted_events_ocall, sgx_thread_set_multiple_untrusted_events_ocall;
+
+    // from "../PanoplyEnclave/EnclaveUtil/util.edl" import *;
+
+    from "../PanoplyEnclave/SysEnvironment/sgx_pwd.edl" import *;
+    from "../PanoplyEnclave/SysEnvironment/sgx_grp.edl" import *;
+    from "../PanoplyEnclave/SysEnvironment/sgx_utsname.edl" import *;
+    from "../PanoplyEnclave/SysEnvironment/sgx_getopt.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_stdlib.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_fcntl.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_unistd.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_stdio.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_syseventfd.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_syssocket.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_netdb.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_netinetin.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysioctl.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysuio.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysmman.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_poll.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysepoll.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysselect.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_syssendfile.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_syswait.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysstat.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_dirent.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysresource.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_arpainet.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_sysctl.edl" import *;
+    from "../PanoplyEnclave/IO/sgx_signal.edl" import *;
+    from "../PanoplyEnclave/Net/sgx_ifaddrs.edl" import *;
+    from "../PanoplyEnclave/Net/sgx_netif.edl" import *;
+
+    untrusted {
+          void print_string([in, string] const char *str);
+          void print_int(int n);
+    };
+
+    trusted {
+	include "TopensslEnclave.h"
+            public int call_me();
+    };
+};
